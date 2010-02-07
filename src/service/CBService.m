@@ -12,12 +12,6 @@
 
 @synthesize name;
 
-- (BOOL)startServing {
-	id connection = [NSConnection serviceConnectionWithName: name rootObject: self];
-	if (connection != nil) [connection run];
-	return connection != nil;
-}
-
 - (NSData*)processRequestWithParamString:(NSString*)paramString {
 	NSMutableDictionary* parameters = [NSMutableDictionary dictionary];
 	if (paramString != nil) {

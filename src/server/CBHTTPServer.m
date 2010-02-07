@@ -7,7 +7,7 @@
 //
 
 #import "CBHTTPServer.h"
-#import "CBService.h"
+#import "CBServiceCenter.h"
 
 @implementation CBHTTPServer
 
@@ -23,13 +23,14 @@
 				paramString = [serviceName substringFromIndex: range.location + 1];
 				serviceName = [serviceName substringToIndex: range.location];
 			}
-			serviceName = [@"CBService:" stringByAppendingString: serviceName];
-			id service = [NSConnection rootProxyForConnectionWithRegisteredName: serviceName host: nil];
-			if (service == nil) NSLog(@"Could not find service '%@'", serviceName);
+			range = [serviceName rangeOfString: @":"];
+			if (range.location == NSNotFound) NSLog(@"Incorrect URI format");
 			else {
-				NSString* MIMEType = [service MIMEType];
-				NSData* data = [service processRequestWithParamString: paramString];
-				return [NSDictionary dictionaryWithObjectsAndKeys: MIMEType, @"MIMEType", data, @"Data", nil];
+				NSString* serviceCenterName = [NSString stringWithFormat: @"CBService:%@", [serviceName substringToIndex: range.location]];
+				serviceName = [serviceName substringFromIndex: range.location + 1];
+				id serviceCenter = [NSConnection rootProxyForConnectionWithRegisteredName: serviceCenterName host: nil];
+				if (serviceCenter == nil) NSLog(@"Could not find service center '%@'", serviceCenterName);
+				return [serviceCenter processRequestWithServiceName: serviceName paramString: paramString];
 			}
 		} else {
 			return [NSData dataWithContentsOfURL: URL];

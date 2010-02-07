@@ -12,7 +12,7 @@
 
 - (id)init {
 	if ((self = [super init])) {
-		name = @"CBService:String";
+		name = @"strip";
 	}
 	return self;
 }
