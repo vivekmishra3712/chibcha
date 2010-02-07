@@ -7,7 +7,7 @@
 //
 
 #import <Foundation/Foundation.h>
-#import "HTTPServer.h"
+#import "ThreadPoolServer.h"
 
 @interface CBHTTPServer : NSObject {
 	HTTPServer* server;

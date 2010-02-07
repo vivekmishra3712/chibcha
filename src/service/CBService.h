@@ -14,8 +14,8 @@
 
 @property (nonatomic, retain) NSString* name;
 
-- (NSData*)processRequestWithParamString:(NSString*)paramString;
-- (NSData*)processRequestWithParameters:(NSDictionary*)parameters;
+- (NSData*)processRequestWithParamString:(NSString*)paramString data:(NSData*)data;
+- (NSData*)processRequestWithParameters:(NSDictionary*)parameters data:(NSData*)data;
 - (NSString*)MIMEType;
 
 @end

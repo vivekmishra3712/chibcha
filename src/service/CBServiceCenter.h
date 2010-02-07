@@ -16,7 +16,7 @@
 @property (nonatomic, retain) NSString* name;
 
 - (void)registerService:(Class)serviceClass;
-- (NSDictionary*)processRequestWithServiceName:(NSString*)serviceName paramString:(NSString*)paramString;
+- (NSDictionary*)processRequestWithServiceName:(NSString*)serviceName paramString:(NSString*)paramString data:(NSData*)data;
 - (BOOL)startServing;
 
 @end
