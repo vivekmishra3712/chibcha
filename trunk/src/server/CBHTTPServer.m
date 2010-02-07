@@ -8,13 +8,15 @@
 
 #import "CBHTTPServer.h"
 #import "CBServiceCenter.h"
+#import "MyHTTPConnection.h"
 
 @implementation CBHTTPServer
 
-- (NSDictionary*)handleGetRequestWithURI:(NSURL*)URI URL:(NSURL*)URL {
+- (NSDictionary*)handleGetRequestWithURI:(NSString*)URIString data:(NSData*)data {
 	@try {
-		NSLog(@"Serving request: %@", URI);
-		NSString* URIString = [URI absoluteString];
+		NSLog(@"Serving request: %@", URIString);
+		//NSLog(@"Data: %@ %u", data, [data length]);
+		//NSLog(@"Main thread: %d", [NSThread currentThread] == [NSThread mainThread]);
 		if ([URIString rangeOfString: @"/service:"].location == 0) {
 			NSString* serviceName = [URIString substringFromIndex: 9];
 			NSString* paramString = nil;
@@ -30,10 +32,8 @@
 				serviceName = [serviceName substringFromIndex: range.location + 1];
 				id serviceCenter = [NSConnection rootProxyForConnectionWithRegisteredName: serviceCenterName host: nil];
 				if (serviceCenter == nil) NSLog(@"Could not find service center '%@'", serviceCenterName);
-				return [serviceCenter processRequestWithServiceName: serviceName paramString: paramString];
+				return [serviceCenter processRequestWithServiceName: serviceName paramString: paramString data: data];
 			}
-		} else {
-			return [NSData dataWithContentsOfURL: URL];
 		}
 	} @catch (NSException* exception) {
 		NSLog(@"Exception serving request: %@", exception);
@@ -42,18 +42,19 @@
 }
 
 - (void)run {
-    server = [[HTTPServer alloc] init];
+    server = SECURE_SERVER ? [[HTTPServer alloc] init] : [[ThreadPoolServer alloc] init];
     [server setType: @"_http._tcp."];
     [server setName: @"Chibcha HTTP Server"];
 	[server setPort: 8765];
     [server setDocumentRoot: [NSURL fileURLWithPath: [@"~/tmp" stringByExpandingTildeInPath]]];
-	[server setRequestDelegate: self];
+	[server setDelegate: self];
+	[server setConnectionClass: [MyHTTPConnection class]];
 	
     NSError* startError = nil;
     if (![server start: &startError]) {
         NSLog(@"Error starting server: %@", startError);
     } else {
-        NSLog(@"Starting server on port %d", [server port]);
+        //NSLog(@"Starting server on port %d", [server port]);
     }
 }
 

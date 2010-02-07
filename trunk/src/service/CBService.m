@@ -12,7 +12,7 @@
 
 @synthesize name;
 
-- (NSData*)processRequestWithParamString:(NSString*)paramString {
+- (NSData*)processRequestWithParamString:(NSString*)paramString data:(NSData*)data {
 	NSMutableDictionary* parameters = [NSMutableDictionary dictionary];
 	if (paramString != nil) {
 		NSArray* comps = [paramString componentsSeparatedByString: @"&"];
@@ -24,10 +24,10 @@
 		}
 	}
 	//NSLog(@"Parameters: %@", parameters);
-	return [self processRequestWithParameters: parameters];
+	return [self processRequestWithParameters: parameters data: data];
 }
 
-- (NSData*)processRequestWithParameters:(NSDictionary*)parameters {
+- (NSData*)processRequestWithParameters:(NSDictionary*)parameters data:(NSData*)data {
 	[NSException raise: NSInternalInconsistencyException format: @"CBService cannot serve, it's an abstract class"];
 	return nil;
 }
