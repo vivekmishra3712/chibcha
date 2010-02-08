@@ -33,10 +33,10 @@
 				if (range2.location != NSNotFound) {
 					sessionID = [cookies substringWithRange: NSMakeRange(range.location + 11, range2.location - range.location - 11)];
 					NSDate* date = [sessionIDs objectForKey: sessionID];
-					if (date == nil || -[date timeIntervalSinceNow] > [[prefs objectForKey: kCBPrefsKeySessionDuration] integerValue]) {
+					if (date == nil || -[date timeIntervalSinceNow] > [[prefs objectForKey: kCBPrefsKeySessionDuration] integerValue] * 60) {
 						[sessionIDs removeObjectForKey: sessionID];
 						sessionID = nil;
-						NSLog(@"Session expired");
+						NSLog(@"Session absent or expired");
 					} //else NSLog(@"Session ID & creation date: %@ %@", sessionID, date);
 				}
 			}
@@ -64,10 +64,8 @@
 																			   paramString: paramString
 																					  data: data
 																				 sessionID: sessionID];
-				if (sessionID == nil) {
-					sessionID = [self uniqueKey];
-					[sessionIDs setObject: [NSDate date] forKey: sessionID];
-				}
+				if (sessionID == nil) sessionID = [self uniqueKey];
+				[sessionIDs setObject: [NSDate date] forKey: sessionID];
 				[retVal setObject: [NSString stringWithFormat: @"chibchaSID=%@@;path=/;Version=\"1\"", sessionID] forKey: @"Cookie"];
 				return retVal;
 			}
