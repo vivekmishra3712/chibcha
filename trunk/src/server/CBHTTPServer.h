@@ -9,10 +9,23 @@
 #import <Foundation/Foundation.h>
 #import "ThreadPoolServer.h"
 
+#define kCBPrefsKeyPath				@"Path"
+#define kCBPrefsKeyPort				@"Port"
+#define kCBPrefsKeyMaxConn			@"MaxConn"
+#define kCBPrefsKeyDocRoot			@"DocRoot"
+#define kCBPrefsKeyPostLimit		@"PostLimit"
+#define kCBPrefsKeyMultithreaded	@"Multithreaded"
+#define kCBPrefsKeySecure			@"Secure"
+#define kCBPrefsKeyServeAtLaunch	@"ServeAtLaunch"
+
 @interface CBHTTPServer : NSObject {
 	HTTPServer* server;
+	NSDictionary* prefs;
 }
 
-- (void)run;
+- (id)initWithPreferences:(NSDictionary*)_prefs;
+- (BOOL)start;
+- (void)stop;
+- (NSDictionary*)preferences;
 
 @end
