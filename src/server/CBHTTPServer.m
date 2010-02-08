@@ -9,18 +9,39 @@
 #import "CBHTTPServer.h"
 #import "CBServiceCenter.h"
 #import "MyHTTPConnection.h"
+#import "EXNSAdditions.h"
 
 @implementation CBHTTPServer
 
 - (id)initWithPreferences:(NSDictionary*)_prefs {
 	if ((self = [super init])) {
 		prefs = [_prefs retain];
+		sessionIDs = [[NSMutableDictionary alloc] init];
 	}
 	return self;
 }
 
-- (NSDictionary*)handleRequestWithURI:(NSString*)URIString data:(NSData*)data {
+- (NSDictionary*)handleRequestWithURI:(NSString*)URIString params:(NSDictionary*)params {
 	@try {
+		NSDictionary* header = [params objectForKey: @"Header"];
+		NSString* cookies = [header objectForKey: @"Cookie"];
+		NSString* sessionID = nil;
+		if (cookies != nil) {
+			NSRange range = [cookies rangeOfString: @"chibchaSID="];
+			if (range.location != NSNotFound) {
+				NSRange range2 = [cookies rangeOfString: @"@" options: 0 range: NSMakeRange(range.location, [cookies length] - range.location)];
+				if (range2.location != NSNotFound) {
+					sessionID = [cookies substringWithRange: NSMakeRange(range.location + 11, range2.location - range.location - 11)];
+					NSDate* date = [sessionIDs objectForKey: sessionID];
+					if (date == nil || -[date timeIntervalSinceNow] > [[prefs objectForKey: kCBPrefsKeySessionDuration] integerValue]) {
+						[sessionIDs removeObjectForKey: sessionID];
+						sessionID = nil;
+						NSLog(@"Session expired");
+					} //else NSLog(@"Session ID & creation date: %@ %@", sessionID, date);
+				}
+			}
+		}
+		NSData* data = [params objectForKey: @"Data"];
 		NSLog(@"Serving request: %@", URIString);
 		//NSLog(@"Data: %@ %u", data, [data length]);
 		//NSLog(@"Main thread: %d", [NSThread currentThread] == [NSThread mainThread]);
@@ -39,13 +60,27 @@
 				serviceName = [serviceName substringFromIndex: range.location + 1];
 				id serviceCenter = [NSConnection rootProxyForConnectionWithRegisteredName: serviceCenterName host: nil];
 				if (serviceCenter == nil) NSLog(@"Could not find service center '%@'", serviceCenterName);
-				return [serviceCenter processRequestWithServiceName: serviceName paramString: paramString data: data];
+				NSMutableDictionary* retVal = [serviceCenter processRequestWithServiceName: serviceName
+																			   paramString: paramString
+																					  data: data
+																				 sessionID: sessionID];
+				if (sessionID == nil) {
+					sessionID = [self uniqueKey];
+					[sessionIDs setObject: [NSDate date] forKey: sessionID];
+				}
+				[retVal setObject: [NSString stringWithFormat: @"chibchaSID=%@@;path=/;Version=\"1\"", sessionID] forKey: @"Cookie"];
+				return retVal;
 			}
 		}
 	} @catch (NSException* exception) {
 		NSLog(@"Exception serving request: %@", exception);
 	}
 	return nil;
+}
+
+- (NSString*)uniqueKey {
+	return [[[NSString stringWithFormat: @"%@:%ld", [NSDate date], random()] base64String]
+			stringByTrimmingCharactersInSet: [NSCharacterSet whitespaceAndNewlineCharacterSet]];
 }
 
 - (void)stop {
@@ -79,6 +114,7 @@
 - (void)dealloc {
 	[server release];
 	[prefs release];
+	[sessionIDs release];
 	[super dealloc];
 }
 

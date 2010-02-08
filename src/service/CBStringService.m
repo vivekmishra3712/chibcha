@@ -17,9 +17,9 @@
 	return self;
 }
 
-- (NSData*)processRequestWithParameters:(NSDictionary*)parameters data:(NSData*)data {
+- (NSData*)processRequestWithParameters:(NSDictionary*)parameters data:(NSData*)data sessionID:(NSString*)sessionID {
 	NSString* string = [parameters objectForKey: @"string"];
-	NSLog(@"Input string & data: %@", string);
+	NSLog(@"Input string: %@ (session ID: %@)", string, sessionID);
 	NSString* strippedString = [[[NSString alloc] initWithData: [string dataUsingEncoding: NSASCIIStringEncoding allowLossyConversion: YES] encoding: NSASCIIStringEncoding] autorelease];
 	NSString* result = [NSString stringWithFormat: @"%@ -> %@", string, strippedString];
 	return [result dataUsingEncoding: NSUTF8StringEncoding];
