@@ -9,15 +9,18 @@
 #import "CBServiceCenter.h"
 #import "CBService.h"
 
+#define NUMBER_OF_THREADS	10
+
 @implementation CBServiceCenter
 
 @synthesize name;
+@synthesize services;
 
 - (id)init {
 	if ((self = [super init])) {
 		services = [[NSMutableDictionary alloc] init];
-		Class DBClass = NSClassFromString(@"EXObjectStore");
-		if (DBClass == Nil) NSLog(@"No database (class not found)");
+		//Class DBClass = NSClassFromString(@"EXObjectStore");
+		//if (DBClass == Nil) NSLog(@"No database (class not found)");
 	}
 	return self;
 }
@@ -29,7 +32,7 @@
 }
 
 - (NSMutableDictionary*)processRequestWithServiceName:(NSString*)serviceName paramString:(NSString*)paramString data:(NSData*)_data sessionID:(NSString*)sessionID {
-	CBService* service = [services objectForKey: serviceName];
+	CBService* service = [self.services objectForKey: serviceName];
 	if (service == nil) {
 		NSLog(@"Could not find service '%@'", serviceName);
 	} else {
@@ -42,7 +45,14 @@
 
 - (BOOL)startServing {
 	id connection = [NSConnection serviceConnectionWithName: name rootObject: self];
-	if (connection != nil) [connection run];
+	if (connection != nil) {
+		[connection enableMultipleThreads];
+		for (int i = 1; i < NUMBER_OF_THREADS; i++) {
+			[connection runInNewThread];
+		}
+		[connection run];
+		//while (YES) [NSThread sleepForTimeInterval: 1];
+	}
 	return connection != nil;
 }
 
