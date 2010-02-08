@@ -60,14 +60,19 @@
 				serviceName = [serviceName substringFromIndex: range.location + 1];
 				id serviceCenter = [NSConnection rootProxyForConnectionWithRegisteredName: serviceCenterName host: nil];
 				if (serviceCenter == nil) NSLog(@"Could not find service center '%@'", serviceCenterName);
-				NSMutableDictionary* retVal = [serviceCenter processRequestWithServiceName: serviceName
-																			   paramString: paramString
-																					  data: data
-																				 sessionID: sessionID];
-				if (sessionID == nil) sessionID = [self uniqueKey];
-				[sessionIDs setObject: [NSDate date] forKey: sessionID];
-				[retVal setObject: [NSString stringWithFormat: @"chibchaSID=%@@;path=/;Version=\"1\"", sessionID] forKey: @"Cookie"];
-				return retVal;
+				else {
+					if (sessionID == nil) {
+						sessionID = [self uniqueKey];
+						//NSLog(@"New session ID: %@", sessionID);
+					}
+					[sessionIDs setObject: [NSDate date] forKey: sessionID];
+					NSMutableDictionary* retVal = [serviceCenter processRequestWithServiceName: serviceName
+																				   paramString: paramString
+																						  data: data
+																					 sessionID: sessionID];
+					[retVal setObject: [NSString stringWithFormat: @"chibchaSID=%@@;path=/;Version=\"1\"", sessionID] forKey: @"Cookie"];
+					return retVal;
+				}
 			}
 		}
 	} @catch (NSException* exception) {
@@ -77,7 +82,8 @@
 }
 
 - (NSString*)uniqueKey {
-	return [[[NSString stringWithFormat: @"%@:%ld", [NSDate date], random()] base64String]
+	NSString* uniqueString = [NSString stringWithFormat: @"%@:%ld", [NSDate date], random()];
+	return [[uniqueString base64String]
 			stringByTrimmingCharactersInSet: [NSCharacterSet whitespaceAndNewlineCharacterSet]];
 }
 
