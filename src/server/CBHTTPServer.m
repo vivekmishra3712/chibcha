@@ -12,7 +12,14 @@
 
 @implementation CBHTTPServer
 
-- (NSDictionary*)handleGetRequestWithURI:(NSString*)URIString data:(NSData*)data {
+- (id)initWithPreferences:(NSDictionary*)_prefs {
+	if ((self = [super init])) {
+		prefs = [_prefs retain];
+	}
+	return self;
+}
+
+- (NSDictionary*)handleRequestWithURI:(NSString*)URIString data:(NSData*)data {
 	@try {
 		NSLog(@"Serving request: %@", URIString);
 		//NSLog(@"Data: %@ %u", data, [data length]);
@@ -41,25 +48,37 @@
 	return nil;
 }
 
-- (void)run {
-    server = SECURE_SERVER ? [[HTTPServer alloc] init] : [[ThreadPoolServer alloc] init];
+- (void)stop {
+	[server stop];
+}
+
+- (BOOL)start {
+	[server release];
+    server = [[prefs objectForKey: kCBPrefsKeyMultithreaded] boolValue] == NO ? [[HTTPServer alloc] initWithPreferences: prefs] : [[ThreadPoolServer alloc] initWithPreferences: prefs];
     [server setType: @"_http._tcp."];
     [server setName: @"Chibcha HTTP Server"];
-	[server setPort: 8765];
-    [server setDocumentRoot: [NSURL fileURLWithPath: [@"~/tmp" stringByExpandingTildeInPath]]];
+	[server setPort: [[prefs objectForKey: kCBPrefsKeyPort] integerValue]];
+    [server setDocumentRoot: [NSURL fileURLWithPath: [[prefs objectForKey: kCBPrefsKeyDocRoot] stringByExpandingTildeInPath]]];
 	[server setDelegate: self];
 	[server setConnectionClass: [MyHTTPConnection class]];
 	
     NSError* startError = nil;
     if (![server start: &startError]) {
         NSLog(@"Error starting server: %@", startError);
+		return NO;
     } else {
         //NSLog(@"Starting server on port %d", [server port]);
+		return YES;
     }
+}
+
+- (NSDictionary*)preferences {
+	return prefs;
 }
 
 - (void)dealloc {
 	[server release];
+	[prefs release];
 	[super dealloc];
 }
 

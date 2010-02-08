@@ -12,9 +12,9 @@
 
 @synthesize name;
 
-- (NSData*)processRequestWithParamString:(NSString*)paramString data:(NSData*)data {
+- (NSDictionary*)parametersWithParamString:(NSString*)paramString {
 	NSMutableDictionary* parameters = [NSMutableDictionary dictionary];
-	if (paramString != nil) {
+	if (paramString != nil && [paramString length] > 0) {
 		NSArray* comps = [paramString componentsSeparatedByString: @"&"];
 		for (NSString* pair in comps) {
 			NSArray* comps2 = [pair componentsSeparatedByString: @"="];
@@ -24,6 +24,11 @@
 		}
 	}
 	//NSLog(@"Parameters: %@", parameters);
+	return parameters;
+}
+
+- (NSData*)processRequestWithParamString:(NSString*)paramString data:(NSData*)data {
+	NSDictionary* parameters = [self parametersWithParamString: paramString];
 	return [self processRequestWithParameters: parameters data: data];
 }
 
