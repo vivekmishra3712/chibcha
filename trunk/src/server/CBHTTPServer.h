@@ -12,6 +12,7 @@
 #define kCBPrefsKeyPath				@"Path"
 #define kCBPrefsKeyPort				@"Port"
 #define kCBPrefsKeyMaxConn			@"MaxConn"
+#define kCBPrefsKeySessionDuration	@"SessionDuration"
 #define kCBPrefsKeyDocRoot			@"DocRoot"
 #define kCBPrefsKeyPostLimit		@"PostLimit"
 #define kCBPrefsKeyMultithreaded	@"Multithreaded"
@@ -21,11 +22,13 @@
 @interface CBHTTPServer : NSObject {
 	HTTPServer* server;
 	NSDictionary* prefs;
+	NSMutableDictionary* sessionIDs;
 }
 
 - (id)initWithPreferences:(NSDictionary*)_prefs;
 - (BOOL)start;
 - (void)stop;
 - (NSDictionary*)preferences;
+- (NSString*)uniqueKey;
 
 @end

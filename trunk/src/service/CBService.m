@@ -27,12 +27,12 @@
 	return parameters;
 }
 
-- (NSData*)processRequestWithParamString:(NSString*)paramString data:(NSData*)data {
+- (NSData*)processRequestWithParamString:(NSString*)paramString data:(NSData*)data sessionID:(NSString*)sessionID {
 	NSDictionary* parameters = [self parametersWithParamString: paramString];
-	return [self processRequestWithParameters: parameters data: data];
+	return [self processRequestWithParameters: parameters data: data sessionID: sessionID];
 }
 
-- (NSData*)processRequestWithParameters:(NSDictionary*)parameters data:(NSData*)data {
+- (NSData*)processRequestWithParameters:(NSDictionary*)parameters data:(NSData*)data sessionID:(NSString*)sessionID {
 	[NSException raise: NSInternalInconsistencyException format: @"CBService cannot serve, it's an abstract class"];
 	return nil;
 }
