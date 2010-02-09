@@ -23,10 +23,24 @@
 	if ((self = [super init])) {
 		services = [[NSMutableDictionary alloc] init];
 		sessions = [[NSMutableDictionary alloc] init];
-		//Class DBClass = NSClassFromString(@"EXObjectStore");
-		//if (DBClass == Nil) NSLog(@"No database (class not found)");
+		Class DBClass = NSClassFromString(@"EXObjectStore");
+		if ([self dataPath] != nil) {
+			if (DBClass == Nil) NSLog(@"No database (class not found)");
+			else {
+				objectStore = [[EXObjectStore alloc] initWithPath: [self dataPath]];
+				NSLog(@"Database opened at path %@", [self dataPath]);
+			}
+		}
 	}
 	return self;
+}
+
+- (NSString*)dataPath {
+	return nil; //[@"~/Library/Application Support/Chibcha App Server/default.db" stringByExpandingTildeInPath];
+}
+
+- (EXObjectStore*)objectStore {
+	return objectStore;
 }
 
 - (void)registerService:(Class)serviceClass {
@@ -58,9 +72,9 @@
 									 toTarget: self
 								   withObject: [[^void() {
 				if ([service isThreadSafe])
-					retVal.value = [service processRequestWithParamString: paramString data: _data session: session];
+					retVal.value = [service processRequestWithParamString: paramString data: _data session: session serviceCenter: self];
 				else @synchronized (service) {
-					retVal.value = [service processRequestWithParamString: paramString data: _data session: session];
+					retVal.value = [service processRequestWithParamString: paramString data: _data session: session serviceCenter: self];
 				}
 			} copy] autorelease]];
 			NSDate* expires = [NSDate dateWithTimeIntervalSinceNow: [service timeout]];
@@ -120,6 +134,7 @@
 	[name release];
 	[services release];
 	[sessions release];
+	[objectStore release];
 	[super dealloc];
 }
 

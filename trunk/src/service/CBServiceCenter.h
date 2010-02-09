@@ -7,11 +7,13 @@
 //
 
 #import <Foundation/Foundation.h>
+#import "EXObjectStore.h"
 
 @interface CBServiceCenter : NSObject {
 	NSString* name;
 	NSMutableDictionary* services;
 	NSMutableDictionary* sessions;
+	EXObjectStore* objectStore;
 }
 
 @property (nonatomic, retain) NSString* name;
@@ -23,5 +25,7 @@
 - (NSMutableDictionary*)processRequestWithServiceName:(NSString*)serviceName paramString:(NSString*)paramString data:(NSData*)data sessionID:(NSString*)sessionID;
 - (BOOL)startServing;
 - (NSUInteger)numberOfThreads;
+- (NSString*)dataPath;
+- (EXObjectStore*)objectStore;
 
 @end
