@@ -22,12 +22,22 @@
 }
 
 - (BOOL)startServing {
-	connection = [NSConnection serviceConnectionWithName: @"Entropy:Messaging" rootObject: self];
-	if (connection != nil) {
-		[connection enableMultipleThreads];
-		for (int i = 0; i < NUMBER_OF_MESSAGE_THREADS; i++) [connection runInNewThread];
-		return YES;
-	} else return NO;
+	@try {
+		NSSocketPort* port = [[[NSSocketPort alloc] init] autorelease];
+		connection = [NSConnection connectionWithReceivePort: port sendPort: port];
+		[connection setRootObject: self];
+		NSSocketPortNameServer* nameServer = [NSSocketPortNameServer sharedInstance];
+		[connection registerName: @"Entropy:Messaging" withNameServer: nameServer];
+		//connection = [NSConnection serviceConnectionWithName: @"Entropy:Messaging" rootObject: self];
+		if (connection != nil) {
+			[connection enableMultipleThreads];
+			for (int i = 0; i < NUMBER_OF_MESSAGE_THREADS; i++) [connection runInNewThread];
+			return YES;
+		}
+	} @catch (NSException* exception) {
+		NSLog(@"Error starting message server: %@", exception);
+	}
+	return NO;
 }
 
 - (BOOL)postMessage:(CBMessage*)message toPeer:(CBPeer*)consumer {
@@ -64,7 +74,7 @@
 - (void)close {
 	[connection invalidate];
 	[objectStore release];
-	NSLog(@"Messaging center closed");
+	NSLog(@"Messaging server closed");
 }
 
 - (void)dealloc {

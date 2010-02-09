@@ -14,10 +14,12 @@
 @implementation CBMessageQueue
 
 @synthesize valid;
+@synthesize messageCenter;
 
-- (id)initWithMessageCenter:(CBMessageCenter*)_messageCenter peer:(CBPeer*)_peer {
+- (id)initWithMessageCenterName:(NSString*)_messageCenterName host:(NSString*)_host peer:(CBPeer*)_peer {
 	if ((self = [super init])) {
-		messageCenter = [_messageCenter retain];
+		messageCenterName = [_messageCenterName retain];
+		host = [_host retain];
 		peer = [_peer retain];
 		valid = YES;
 		[NSThread detachNewThreadSelector: @selector(fetchMessages) toTarget: self withObject: nil];
@@ -25,27 +27,53 @@
 	return self;
 }
 
+- (void)initializeMessageCenter {
+	@try {
+		NSSocketPortNameServer* nameServer = [NSSocketPortNameServer sharedInstance];
+		self.messageCenter = (CBMessageCenter*) [NSConnection rootProxyForConnectionWithRegisteredName: messageCenterName
+																							 host: host
+																				  usingNameServer: nameServer];
+		if (self.messageCenter != nil) [[NSNotificationCenter defaultCenter] addObserver: self
+																				selector: @selector(connectionDidDie:)
+																					name: NSConnectionDidDieNotification
+																				  object: self.messageCenter];
+	} @catch (NSException* exception) {
+		//NSLog(@"Error obtaining messaging provider: %@", exception);
+	}
+}
+
+- (void)connectionDidDie:(NSNotification*)notification {
+	NSLog(@"Connection died");
+}
+
 - (void)fetchMessages {
 	NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
 	while (self.valid == YES) {
 		NSAutoreleasePool* pool2 = [[NSAutoreleasePool alloc] init];
 		@try {
-			NSArray* messages = [messageCenter fetchMessagesForPeer: peer];
-			if (messages != nil && self.valid == YES) {
-				for (CBMessage* message in messages) {
-					if (self.valid == YES && delegate != nil && [delegate respondsToSelector: @selector(messageQueue:didReceiveMessage:)])
-						[delegate performSelector: @selector(messageQueue:didReceiveMessage:)
-									   withObject: self
-									   withObject: message];
+			if (delegate != nil) {
+				if (self.messageCenter == nil) [self initializeMessageCenter];
+				if (self.messageCenter != nil) {
+					NSArray* messages = [self.messageCenter fetchMessagesForPeer: peer];
+					if (messages != nil) {
+						for (CBMessage* message in messages) {
+							if ([delegate respondsToSelector: @selector(messageQueue:didReceiveMessage:)])
+								[delegate performSelector: @selector(messageQueue:didReceiveMessage:)
+											   withObject: self
+											   withObject: message];
+						}
+					}
 				}
 			}
 		} @catch (NSException* exception) {
-			NSLog(@"Error fetching messages: %@", exception);
+			[[(NSDistantObject*) self.messageCenter connectionForProxy] invalidate];
+			self.messageCenter = nil;
+			//NSLog(@"Error fetching messages: %@", exception);
 		}
 		[NSThread sleepForTimeInterval: FETCHER_SLEEP_INTERVAL];
 		[pool2 drain];
 	}
-	NSLog(@"Existing MQ listener");
+	NSLog(@"Exiting MQ listener");
 	[pool drain];
 }
 
@@ -54,13 +82,25 @@
 }
 
 - (BOOL)postMessage:(CBMessage*)message toPeer:(CBPeer*)consumer {
-	return [messageCenter postMessage: message toPeer: consumer];
+	if (self.messageCenter == nil) [self initializeMessageCenter];
+	if (self.messageCenter != nil) {
+		@try {
+			return [self.messageCenter postMessage: message toPeer: consumer];
+		} @catch (NSException* exception) {
+			[[(NSDistantObject*) self.messageCenter connectionForProxy] invalidate];
+			self.messageCenter = nil;
+			//NSLog(@"Error posting message: %@", exception);
+		}
+	}
+	return NO;
 }
 
 - (void)dealloc {
 	self.valid = NO;
 	[messageCenter release];
 	[peer release];
+	[messageCenterName release];
+	[host release];
 	[super dealloc];
 }
 
