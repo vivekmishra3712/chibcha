@@ -17,7 +17,7 @@
 	return self;
 }
 
-- (NSData*)processRequestWithParameters:(NSDictionary*)parameters data:(NSData*)data session:(CBSession*)session {
+- (NSData*)processRequestWithParameters:(NSDictionary*)parameters data:(NSData*)data session:(CBSession*)session serviceCenter:(CBServiceCenter*)serviceCenter {
 	NSString* string = [parameters objectForKey: @"string"];
 	NSLog(@"Input string: %@ (session: %@)", string, session);
 	NSString* strippedString = [[[NSString alloc] initWithData: [string dataUsingEncoding: NSASCIIStringEncoding allowLossyConversion: YES] encoding: NSASCIIStringEncoding] autorelease];

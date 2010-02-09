@@ -13,7 +13,6 @@
 #define SERVICE_TIMEOUT		60
 
 @synthesize name;
-//@synthesize serviceCenter;
 
 - (NSDictionary*)parametersWithParamString:(NSString*)paramString {
 	NSMutableDictionary* parameters = [NSMutableDictionary dictionary];
@@ -30,12 +29,12 @@
 	return parameters;
 }
 
-- (NSData*)processRequestWithParamString:(NSString*)paramString data:(NSData*)data session:(CBSession*)session {
+- (NSData*)processRequestWithParamString:(NSString*)paramString data:(NSData*)data session:(CBSession*)session serviceCenter:(CBServiceCenter*)serviceCenter {
 	NSDictionary* parameters = [self parametersWithParamString: paramString];
-	return [self processRequestWithParameters: parameters data: data session: session];
+	return [self processRequestWithParameters: parameters data: data session: session serviceCenter: serviceCenter];
 }
 
-- (NSData*)processRequestWithParameters:(NSDictionary*)parameters data:(NSData*)data session:(CBSession*)session {
+- (NSData*)processRequestWithParameters:(NSDictionary*)parameters data:(NSData*)data session:(CBSession*)session serviceCenter:(CBServiceCenter*)serviceCenter {
 	[NSException raise: NSInternalInconsistencyException format: @"CBService cannot serve, it's an abstract class"];
 	return nil;
 }

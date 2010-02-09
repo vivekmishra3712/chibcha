@@ -116,7 +116,7 @@
 
 - (BOOL)start {
 	[server release];
-	NSLog(@"%@", prefs);
+	//NSLog(@"%@", prefs);
     server = [[prefs objectForKey: kCBPrefsKeyMultithreaded] boolValue] == NO ? [[HTTPServer alloc] initWithPreferences: prefs] : [[ThreadPoolServer alloc] initWithPreferences: prefs];
     [server setType: @"_http._tcp."];
     [server setName: @"Chibcha HTTP Server"];
