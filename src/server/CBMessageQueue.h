@@ -18,12 +18,16 @@
 	CBMessageCenter* messageCenter;
 	NSObject<CBMessageQueueDelegate>* delegate;
 	BOOL valid;
+	NSString* messageCenterName;
+	NSString* host;
 }
 
 @property BOOL valid;
+@property (retain) CBMessageCenter* messageCenter;
 
-- (id)initWithMessageCenter:(CBMessageCenter*)_messageCenter peer:(CBPeer*)_peer;
+- (id)initWithMessageCenterName:(NSString*)_messageCenterName host:(NSString*)_host peer:(CBPeer*)_peer;
 - (void)setDelegate:(NSObject<CBMessageQueueDelegate>*)_delegate;
 - (BOOL)postMessage:(CBMessage*)message toPeer:(CBPeer*)consumer;
+- (void)initializeMessageCenter;
 
 @end
