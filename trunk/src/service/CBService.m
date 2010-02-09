@@ -10,7 +10,10 @@
 
 @implementation CBService
 
+#define SERVICE_TIMEOUT		60
+
 @synthesize name;
+//@synthesize serviceCenter;
 
 - (NSDictionary*)parametersWithParamString:(NSString*)paramString {
 	NSMutableDictionary* parameters = [NSMutableDictionary dictionary];
@@ -27,18 +30,26 @@
 	return parameters;
 }
 
-- (NSData*)processRequestWithParamString:(NSString*)paramString data:(NSData*)data sessionID:(NSString*)sessionID {
+- (NSData*)processRequestWithParamString:(NSString*)paramString data:(NSData*)data session:(CBSession*)session {
 	NSDictionary* parameters = [self parametersWithParamString: paramString];
-	return [self processRequestWithParameters: parameters data: data sessionID: sessionID];
+	return [self processRequestWithParameters: parameters data: data session: session];
 }
 
-- (NSData*)processRequestWithParameters:(NSDictionary*)parameters data:(NSData*)data sessionID:(NSString*)sessionID {
+- (NSData*)processRequestWithParameters:(NSDictionary*)parameters data:(NSData*)data session:(CBSession*)session {
 	[NSException raise: NSInternalInconsistencyException format: @"CBService cannot serve, it's an abstract class"];
 	return nil;
 }
 
 - (NSString*)MIMEType {
 	return @"text/html;charset=UTF-8";
+}
+
+- (BOOL)isThreadSafe {
+	return YES;
+}
+
+- (NSTimeInterval)timeout {
+	return SERVICE_TIMEOUT;
 }
 
 - (void)dealloc {

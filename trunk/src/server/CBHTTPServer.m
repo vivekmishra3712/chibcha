@@ -26,6 +26,7 @@
 		NSDictionary* header = [params objectForKey: @"Header"];
 		NSString* cookies = [header objectForKey: @"Cookie"];
 		NSString* sessionID = nil;
+		NSString* discardedSessionID = nil;
 		if (cookies != nil) {
 			NSRange range = [cookies rangeOfString: @"chibchaSID="];
 			if (range.location != NSNotFound) {
@@ -35,6 +36,7 @@
 					NSDate* date = [sessionIDs objectForKey: sessionID];
 					if (date == nil || -[date timeIntervalSinceNow] > [[prefs objectForKey: kCBPrefsKeySessionDuration] integerValue] * 60) {
 						[sessionIDs removeObjectForKey: sessionID];
+						discardedSessionID = [[sessionID retain] autorelease];
 						sessionID = nil;
 						NSLog(@"Session absent or expired");
 					} //else NSLog(@"Session ID & creation date: %@ %@", sessionID, date);
@@ -61,11 +63,15 @@
 				id serviceCenter = [NSConnection rootProxyForConnectionWithRegisteredName: serviceCenterName host: nil];
 				if (serviceCenter == nil) NSLog(@"Could not find service center '%@'", serviceCenterName);
 				else {
+					if (discardedSessionID != nil) [serviceCenter discardSessionWithSessionID: discardedSessionID];
 					if (sessionID == nil) {
 						sessionID = [self uniqueKey];
 						//NSLog(@"New session ID: %@", sessionID);
 					}
 					[sessionIDs setObject: [NSDate date] forKey: sessionID];
+					[NSThread detachNewThreadSelector: @selector(checkTimeout:)
+											 toTarget: self
+										   withObject: serviceCenter];
 					NSMutableDictionary* retVal = [serviceCenter processRequestWithServiceName: serviceName
 																				   paramString: paramString
 																						  data: data
@@ -81,6 +87,23 @@
 	return nil;
 }
 
+- (void)checkTimeout:(id)serviceCenter {
+	NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
+	NSDate* expires = [NSDate dateWithTimeIntervalSinceNow: [[prefs objectForKey: kCBPrefsKeyServiceTimeout] integerValue]];
+	NSConnection* connection = [serviceCenter connectionForProxy];
+	while ([connection isValid]) {
+		//NSLog(@"# %u %u", [serviceCenter retainCount], [connection retainCount]);
+		if ([expires timeIntervalSinceNow] < 0) {
+			NSLog(@"Invalidating connection");
+			[connection invalidate];
+			break;
+		}
+		[NSThread sleepForTimeInterval: 1];
+	}
+	//NSLog(@"Done");
+	[pool drain];
+}
+
 - (NSString*)uniqueKey {
 	NSString* uniqueString = [NSString stringWithFormat: @"%@:%ld", [NSDate date], random()];
 	return [[uniqueString base64String]
@@ -93,6 +116,7 @@
 
 - (BOOL)start {
 	[server release];
+	NSLog(@"%@", prefs);
     server = [[prefs objectForKey: kCBPrefsKeyMultithreaded] boolValue] == NO ? [[HTTPServer alloc] initWithPreferences: prefs] : [[ThreadPoolServer alloc] initWithPreferences: prefs];
     [server setType: @"_http._tcp."];
     [server setName: @"Chibcha HTTP Server"];

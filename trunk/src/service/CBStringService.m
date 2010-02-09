@@ -17,11 +17,12 @@
 	return self;
 }
 
-- (NSData*)processRequestWithParameters:(NSDictionary*)parameters data:(NSData*)data sessionID:(NSString*)sessionID {
+- (NSData*)processRequestWithParameters:(NSDictionary*)parameters data:(NSData*)data session:(CBSession*)session {
 	NSString* string = [parameters objectForKey: @"string"];
-	NSLog(@"Input string: %@", string);
+	NSLog(@"Input string: %@ (session: %@)", string, session);
 	NSString* strippedString = [[[NSString alloc] initWithData: [string dataUsingEncoding: NSASCIIStringEncoding allowLossyConversion: YES] encoding: NSASCIIStringEncoding] autorelease];
 	NSString* result = [NSString stringWithFormat: @"%@ -> %@", string, strippedString];
+	//[NSThread sleepForTimeInterval: 60];
 	return [result dataUsingEncoding: NSUTF8StringEncoding];
 }
 

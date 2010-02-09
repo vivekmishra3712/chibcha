@@ -18,6 +18,7 @@
 #define kCBPrefsKeyMultithreaded	@"Multithreaded"
 #define kCBPrefsKeySecure			@"Secure"
 #define kCBPrefsKeyServeAtLaunch	@"ServeAtLaunch"
+#define kCBPrefsKeyServiceTimeout	@"ServiceTimeout"
 
 @interface CBHTTPServer : NSObject {
 	HTTPServer* server;

@@ -11,13 +11,17 @@
 @interface CBServiceCenter : NSObject {
 	NSString* name;
 	NSMutableDictionary* services;
+	NSMutableDictionary* sessions;
 }
 
 @property (nonatomic, retain) NSString* name;
 @property (retain) NSMutableDictionary* services;
+@property (retain) NSMutableDictionary* sessions;
 
 - (void)registerService:(Class)serviceClass;
+- (void)discardSessionWithSessionID:(NSString*)sessionID;
 - (NSMutableDictionary*)processRequestWithServiceName:(NSString*)serviceName paramString:(NSString*)paramString data:(NSData*)data sessionID:(NSString*)sessionID;
 - (BOOL)startServing;
+- (NSUInteger)numberOfThreads;
 
 @end
