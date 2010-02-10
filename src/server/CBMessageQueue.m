@@ -33,10 +33,14 @@
 		self.messageCenter = (CBMessageCenter*) [NSConnection rootProxyForConnectionWithRegisteredName: messageCenterName
 																							 host: host
 																				  usingNameServer: nameServer];
-		if (self.messageCenter != nil) [[NSNotificationCenter defaultCenter] addObserver: self
+		if (self.messageCenter != nil) {
+			[[(NSDistantObject*) self.messageCenter connectionForProxy] setRequestTimeout: REQUEST_TIMEOUT];
+			[[(NSDistantObject*) self.messageCenter connectionForProxy] setReplyTimeout: RESPONSE_TIMEOUT];
+			[[NSNotificationCenter defaultCenter] addObserver: self
 																				selector: @selector(connectionDidDie:)
 																					name: NSConnectionDidDieNotification
 																				  object: self.messageCenter];
+		}
 	} @catch (NSException* exception) {
 		//NSLog(@"Error obtaining messaging provider: %@", exception);
 	}
@@ -57,16 +61,19 @@
 					NSArray* messages = [self.messageCenter fetchMessagesForPeer: peer];
 					if (messages != nil) {
 						for (CBMessage* message in messages) {
-							if ([delegate respondsToSelector: @selector(messageQueue:didReceiveMessage:)])
-								[delegate performSelector: @selector(messageQueue:didReceiveMessage:)
-											   withObject: self
-											   withObject: message];
+							if ([delegate respondsToSelector: @selector(messageQueue:didReceiveMessage:)]) {
+								[NSThread detachNewThreadSelector: @selector(processIncomingMessage:)
+														 toTarget: self
+													   withObject: message];
+							} else {
+								NSLog(@"Message queue delegate doesn't respond to the required method");
+							}
 						}
 					}
 				}
 			}
 		} @catch (NSException* exception) {
-			[[(NSDistantObject*) self.messageCenter connectionForProxy] invalidate];
+			//[[(NSDistantObject*) self.messageCenter connectionForProxy] invalidate];
 			self.messageCenter = nil;
 			//NSLog(@"Error fetching messages: %@", exception);
 		}
@@ -77,26 +84,46 @@
 	[pool drain];
 }
 
-- (void)setDelegate:(NSObject<CBMessageQueueDelegate>*)_delegate {
-	delegate = _delegate;
+- (void)processIncomingMessage:(CBMessage*)message {
+	NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
+	@try {
+		[delegate performSelector: @selector(messageQueue:didReceiveMessage:)
+					   withObject: self
+					   withObject: message];
+		[self.messageCenter discardMessage: message.UID];
+	} @catch (NSException* exception) {
+		NSLog(@"Error processing incoming message: %@", exception);
+	} @finally {
+		[pool drain];
+	}
 }
 
 - (BOOL)postMessage:(CBMessage*)message toPeer:(CBPeer*)consumer {
 	if (self.messageCenter == nil) [self initializeMessageCenter];
 	if (self.messageCenter != nil) {
 		@try {
-			return [self.messageCenter postMessage: message toPeer: consumer];
+			BOOL retVal = [self.messageCenter postMessage: message toPeer: consumer];
+			return retVal;
 		} @catch (NSException* exception) {
-			[[(NSDistantObject*) self.messageCenter connectionForProxy] invalidate];
+			//[[(NSDistantObject*) self.messageCenter connectionForProxy] invalidate];
 			self.messageCenter = nil;
-			//NSLog(@"Error posting message: %@", exception);
+			//NSLog(@"Error posting message: %@ %d", exception, [[(NSDistantObject*) self.messageCenter connectionForProxy] isValid]);
 		}
 	}
 	return NO;
 }
 
-- (void)dealloc {
+- (void)setDelegate:(NSObject<CBMessageQueueDelegate>*)_delegate {
+	delegate = _delegate;
+}
+
+- (void)close {
 	self.valid = NO;
+	[self.messageCenter close];
+}
+
+- (void)dealloc {
+	[self close];
 	[messageCenter release];
 	[peer release];
 	[messageCenterName release];

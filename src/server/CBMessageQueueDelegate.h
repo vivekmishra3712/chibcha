@@ -13,7 +13,6 @@
 
 @protocol CBMessageQueueDelegate
 
-@optional
 - (void)messageQueue:(CBMessageQueue*)messageQueue didReceiveMessage:(CBMessage*)message;
 
 @end

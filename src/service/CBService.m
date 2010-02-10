@@ -51,6 +51,10 @@
 	return SERVICE_TIMEOUT;
 }
 
+- (BOOL)noTimeoutCheck {
+	return NO;
+}
+
 - (void)dealloc {
 	[name release];
 	[super dealloc];

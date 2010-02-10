@@ -29,5 +29,6 @@
 - (void)setDelegate:(NSObject<CBMessageQueueDelegate>*)_delegate;
 - (BOOL)postMessage:(CBMessage*)message toPeer:(CBPeer*)consumer;
 - (void)initializeMessageCenter;
+- (void)close;
 
 @end
