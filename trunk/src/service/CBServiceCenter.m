@@ -55,6 +55,7 @@
 }
 
 - (NSMutableDictionary*)processRequestWithServiceName:(NSString*)serviceName paramString:(NSString*)paramString data:(NSData*)_data sessionID:(NSString*)sessionID {
+	NSLog(@"Main thread: %d", [[NSThread currentThread] isMainThread]);
 	@try {
 		CBService* service = [self.services objectForKey: serviceName]; // thread-safe thanks to "self." (it's not "nonatomic")
 		if (service == nil) {
@@ -68,22 +69,30 @@
 			}
 			NSString* MIMEType = [service MIMEType];
 			CBReturnValue* retVal = [[[CBReturnValue alloc] init] autorelease];
-			[NSThread detachNewThreadSelector: @selector(processBlock:)
-									 toTarget: self
-								   withObject: [[^void() {
+			if ([service noTimeoutCheck] == YES) {
 				if ([service isThreadSafe])
 					retVal.value = [service processRequestWithParamString: paramString data: _data session: session serviceCenter: self];
 				else @synchronized (service) {
 					retVal.value = [service processRequestWithParamString: paramString data: _data session: session serviceCenter: self];
 				}
-			} copy] autorelease]];
-			NSDate* expires = [NSDate dateWithTimeIntervalSinceNow: [service timeout]];
-			while (retVal.value == nil) {
-				if ([expires timeIntervalSinceNow] < 0) {
-					NSLog(@"Timeout: %@", serviceName);
-					break;
+			} else {
+				[NSThread detachNewThreadSelector: @selector(processBlock:)
+										 toTarget: self
+									   withObject: [[^void() {
+					if ([service isThreadSafe])
+						retVal.value = [service processRequestWithParamString: paramString data: _data session: session serviceCenter: self];
+					else @synchronized (service) {
+						retVal.value = [service processRequestWithParamString: paramString data: _data session: session serviceCenter: self];
+					}
+				} copy] autorelease]];
+				NSDate* expires = [NSDate dateWithTimeIntervalSinceNow: [service timeout]];
+				while (retVal.value == nil) {
+					if ([expires timeIntervalSinceNow] < 0) {
+						NSLog(@"Timeout: %@", serviceName);
+						break;
+					}
+					[NSThread sleepForTimeInterval: SLEEP_INTERVAL];
 				}
-				[NSThread sleepForTimeInterval: SLEEP_INTERVAL];
 			}
 			NSData* data = retVal.value;
 			return [NSMutableDictionary dictionaryWithObjectsAndKeys: MIMEType, @"MIMEType", data, @"Data", nil];
@@ -117,7 +126,6 @@
 			[connection runInNewThread];
 		}
 		[connection run];
-		//while (YES) [NSThread sleepForTimeInterval: 1];
 	}
 	return connection != nil;
 }

@@ -15,5 +15,6 @@
 
 - (BOOL)postMessage:(bycopy CBMessage*)message toPeer:(bycopy CBPeer*)consumer;
 - (bycopy NSArray*)fetchMessagesForPeer:(bycopy CBPeer*)consumer;
+- (oneway void)discardMessage:(NSString*)UID;
 
 @end

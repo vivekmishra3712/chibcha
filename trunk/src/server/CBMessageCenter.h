@@ -11,6 +11,9 @@
 #import "CBPeer.h"
 #import "CBMessagingProvider.h"
 
+#define REQUEST_TIMEOUT				10
+#define RESPONSE_TIMEOUT			10
+
 @class EXObjectStore;
 
 @interface CBMessageCenter : NSObject <CBMessagingProvider> {

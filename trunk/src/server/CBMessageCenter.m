@@ -30,6 +30,8 @@
 		[connection registerName: @"Entropy:Messaging" withNameServer: nameServer];
 		//connection = [NSConnection serviceConnectionWithName: @"Entropy:Messaging" rootObject: self];
 		if (connection != nil) {
+			[connection setRequestTimeout: REQUEST_TIMEOUT];
+			[connection setReplyTimeout: RESPONSE_TIMEOUT];
 			[connection enableMultipleThreads];
 			for (int i = 0; i < NUMBER_OF_MESSAGE_THREADS; i++) [connection runInNewThread];
 			return YES;
@@ -43,6 +45,7 @@
 - (BOOL)postMessage:(CBMessage*)message toPeer:(CBPeer*)consumer {
 	@try {
 		message.consumer = consumer;
+		message.sent = [NSDate date];
 		//NSLog(@"Storing message: %@", message);
 		CBMessageDataObject* messageDataObject = [[[CBMessageDataObject alloc] initWithConsumer: consumer
 																						message: message] autorelease];
@@ -61,8 +64,9 @@
 		NSArray* messageDataObjects = [objectStore objectsWithPredicate: predicate];
 		NSMutableArray* messages = [NSMutableArray arrayWithCapacity: [messageDataObjects count]];
 		for (CBMessageDataObject* messageDataObject in messageDataObjects) {
+			messageDataObject.message.relayed = [NSDate date];
+			messageDataObject.message.UID = [objectStore IDOfObject: messageDataObject];
 			[messages addObject: messageDataObject.message];
-			[objectStore removeObject: messageDataObject];
 		}
 		return messages;
 	} @catch (NSException* exception) {
@@ -71,9 +75,19 @@
 	return nil;
 }
 
+- (void)discardMessage:(NSString*)UID {
+	@try {
+		CBMessageDataObject* messageDataObject = [objectStore objectWithObjectID: UID];
+		if (messageDataObject != nil) [objectStore removeObject: messageDataObject];
+	} @catch (NSException* exception) {
+		NSLog(@"Error discarding message: %@", exception);
+	}
+}
+
 - (void)close {
-	[connection invalidate];
-	[objectStore release];
+	//[connection invalidate];
+	[objectStore autorelease];
+	objectStore = nil;
 	NSLog(@"Messaging server closed");
 }
 

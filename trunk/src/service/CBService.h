@@ -22,5 +22,6 @@
 - (NSString*)MIMEType;
 - (BOOL)isThreadSafe;
 - (NSTimeInterval)timeout;
+- (BOOL)noTimeoutCheck;
 
 @end

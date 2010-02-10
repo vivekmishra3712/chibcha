@@ -10,6 +10,7 @@
 #import "CBServiceCenter.h"
 #import "MyHTTPConnection.h"
 #import "EXNSAdditions.h"
+#import "CBLogger.h"
 
 @implementation CBHTTPServer
 
@@ -45,6 +46,7 @@
 		}
 		NSData* data = [params objectForKey: @"Data"];
 		NSLog(@"Serving request: %@", URIString);
+		[CBLogger log: [NSString stringWithFormat: @"New request: %@", URIString]];
 		//NSLog(@"Data: %@ %u", data, [data length]);
 		//NSLog(@"Main thread: %d", [NSThread currentThread] == [NSThread mainThread]);
 		if ([URIString rangeOfString: @"/service:"].location == 0) {
@@ -128,9 +130,10 @@
     NSError* startError = nil;
     if (![server start: &startError]) {
         NSLog(@"Error starting server: %@", startError);
+		[CBLogger log: [NSString stringWithFormat: @"Error starting server: %@", startError]];
 		return NO;
     } else {
-        //NSLog(@"Starting server on port %d", [server port]);
+        [CBLogger log: [NSString stringWithFormat: @"Server started on port %d", [server port]]];
 		return YES;
     }
 }
